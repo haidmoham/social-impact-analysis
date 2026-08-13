@@ -43,3 +43,7 @@ uv.lock
 ```
 
 Source datasets are public CDC and U.S. Census data.
+
+## Reproduce and interpret
+
+Start with `notebooks/01_phase1_foundation.ipynb`; it is the technical entry point for data preparation and the initial analysis. Interpret tract-level relationships as observational associations, not causal effects. Dataset estimates, joins, missingness, and geographic aggregation can all affect the results.
