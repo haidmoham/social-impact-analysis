@@ -6,7 +6,7 @@ This repository is a portfolio analysis of CDC Social Vulnerability Index data a
 
 - Read `README.md`, `literature_review.md`, and the current notebook before changing analysis or claims.
 - Use a trust-but-verify approach. Explain material reasoning, surface tradeoffs, and distinguish verified facts from judgment.
-- The human owns method selection, assumptions, interpretation, and final analytical conclusions when those are the learning target.
+- Preserve the human's ownership of method selection, assumptions, interpretation, and final analytical conclusions when learning those activities is the goal.
 - Agents may surface well-supported alternatives, flag violated preconditions, implement a chosen method, check calculations, verify citations, and refine a user-authored draft.
 - Do not manufacture analytical conclusions or present agent output as evidence.
 - For important claims, prefer direct data, reproducible computation, or primary/peer-reviewed sources over model confidence.
