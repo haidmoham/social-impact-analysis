@@ -1,49 +1,32 @@
 # Social Vulnerability and Health Outcomes in America
 
-Analysis of how community-level social vulnerability relates to health outcomes across U.S. census tracts.
+An exploratory notebook joining CDC Social Vulnerability Index (SVI) and CDC PLACES estimates at census-tract level.
 
-## Data
+## Implemented analysis
 
-- **CDC/ATSDR Social Vulnerability Index (SVI)** — demographic and socioeconomic vulnerability indicators.
-- **CDC PLACES** — estimated prevalence of health outcomes at the census-tract level.
-- **U.S. Census TIGER/Line** — tract boundaries for geographic output.
+[`notebooks/01_phase1_foundation.ipynb`](notebooks/01_phase1_foundation.ipynb) downloads and caches the source data, joins tract FIPS identifiers, and records:
 
-The analysis joins the datasets across roughly 73,000 census tracts.
+- overall SVI and four theme rankings against six selected health measures;
+- a correlation heatmap and diabetes scatterplot with a rolling median;
+- sorted within-state SVI/diabetes correlations.
 
-## Analysis
+The saved join output contains **78,815 tracts**. Some historical notebook prose and figure captions still say roughly 73,000; those captions are inconsistent with the saved output. Pairwise missingness can make individual correlation sample sizes smaller than the joined table.
 
-- correlation between SVI components and selected health outcomes;
-- state and regional comparisons;
-- geographic visualization;
-- tract-level modeling and residual analysis;
-- clustering and feature-importance experiments where useful.
+Geographic maps, residual models, clustering, and feature-importance experiments are not implemented in the current notebook. State-level interpretation remains deferred. TIGER/Line boundaries are not an input to the implemented calculations.
 
-## Setup
+## Reproduce
+
+Use Python 3.12 and uv:
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/haidmoham/social-impact-analysis.git
 cd social-impact-analysis
 uv sync
-code .
+uv run jupyter lab notebooks/01_phase1_foundation.ipynb
 ```
 
-Open `notebooks/01_phase1_foundation.ipynb` and run the notebook.
+Run the notebook from the repository root or `notebooks/`. It creates ignored `data/raw/`, `data/processed/`, and `outputs/figures/` directories. Reproduction requires the external CDC downloads; the saved outputs are historical results, not a newly validated dataset snapshot.
 
-## Structure
+## Limits
 
-```text
-notebooks/
-data/
-  raw/
-  processed/
-outputs/
-  figures/
-pyproject.toml
-uv.lock
-```
-
-Source datasets are public CDC and U.S. Census data.
-
-## Reproduce and interpret
-
-Start with `notebooks/01_phase1_foundation.ipynb`; it is the technical entry point for data preparation and the initial analysis. Interpret tract-level relationships as observational associations, not causal effects. Dataset estimates, joins, missingness, and geographic aggregation can all affect the results.
+These are observational, area-level associations, not causal effects or individual predictions. Source estimates, missingness, joins, and geographic aggregation affect interpretation. The notebook’s discussion and [`literature_review.md`](literature_review.md) contain proposed explanations that the correlations alone cannot establish. Reconcile source versions, sample counts, and captions before extending or publishing the analysis.
