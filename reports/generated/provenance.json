@@ -1,5 +1,5 @@
 {
-  "run_utc": "2026-10-01T15:03:00.771123+00:00",
+  "run_utc": "2026-10-01T15:15:35.521033+00:00",
   "python": "3.12.13",
   "pandas": "3.0.2",
   "numpy": "2.4.4",
@@ -29,6 +29,13 @@
   "valid_overall_svi_in_source": 83342,
   "matched_population": 313597796,
   "svi_population": 331097593,
-  "release_identity": "Cached filename says 2024; 40-measure inventory and 2023 BRFSS years match live 2025 release documentation. Original download release not independently authenticated.",
-  "geography": "ACS 2022 and PLACES 2024+ documentation use 2020 census tract definitions (subject to legal-area updates); matching IDs checked, not a geometry crosswalk audit"
+  "release_identity": "SVI cache byte-identical to official 2022 US tract CSV. All 472,890 selected PLACES records match the official current 2025 dataset, including intervals. Original acquisition date and other 34 cached measures not authenticated.",
+  "geography": "ACS 2022 and PLACES 2024+ documentation use 2020 census tract definitions (subject to legal-area updates); matching IDs checked, not a geometry crosswalk audit",
+  "source_authentication": {
+    "observed_utc": "2026-10-01T15:11:43.677979+00:00",
+    "receipt_sha256": "18bb8951ef75e1c0d084d0a105bbcb34a8b36ca1b6c2e588cad49255af704f64",
+    "svi_official_bytes_equal": true,
+    "places_selected_records_equal": true,
+    "places_selected_records": 472890
+  }
 }

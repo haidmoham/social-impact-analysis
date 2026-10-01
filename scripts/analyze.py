@@ -69,6 +69,8 @@ def main():
     svi.replace({c: {-999: np.nan} for c in [*THEMES, "E_TOTPOP", "EP_AGE65", "EP_AGE17"]}, inplace=True)
     for c in THEMES:
         require(svi[c].dropna().between(0, 1).all(), f"Invalid rank: {c}")
+    for c in ["EP_AGE65", "EP_AGE17"]:
+        require(svi[c].dropna().between(0, 100).all(), f"Invalid age percentage: {c}")
     require(svi.E_TOTPOP.dropna().ge(0).all(), "Negative population")
     selected, inventory = [], []
     columns = ["LocationID", "Year", "MeasureId", "DataValueTypeID", "Data_Value",
@@ -149,6 +151,19 @@ def main():
         "matched_population": int(df.E_TOTPOP.sum()), "svi_population": int(svi.E_TOTPOP.sum()),
         "release_identity": "Cached filename says 2024; 40-measure inventory and 2023 BRFSS years match live 2025 release documentation. Original download release not independently authenticated.",
         "geography": "ACS 2022 and PLACES 2024+ documentation use 2020 census tract definitions (subject to legal-area updates); matching IDs checked, not a geometry crosswalk audit"}
+    auth_path = out / "source_authentication.json"
+    if auth_path.exists():
+        auth = json.loads(auth_path.read_text(encoding="utf-8"))
+        require(auth["svi"]["cache_sha256"] == hashes[svi_path.name] and
+                auth["places_selected_comparison"]["original_full_file_sha256"] == hashes[places_path.name],
+                "Source authentication receipt belongs to another cache")
+        provenance["source_authentication"] = {
+            "observed_utc": auth["observed_utc"], "receipt_sha256": digest(auth_path),
+            "svi_official_bytes_equal": auth["svi"]["bytes_equal"],
+            "places_selected_records_equal": auth["places_selected_comparison"]["all_fields_equal"],
+            "places_selected_records": auth["places_selected_comparison"]["live_rows"]}
+        if auth["svi"]["bytes_equal"] and auth["places_selected_comparison"]["all_fields_equal"]:
+            provenance["release_identity"] = "SVI cache byte-identical to official 2022 US tract CSV. All 472,890 selected PLACES records match the official current 2025 dataset, including intervals. Original acquisition date and other 34 cached measures not authenticated."
     metadata_path = args.raw_dir / "places_live_metadata.json"
     if metadata_path.exists():
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
@@ -217,9 +232,15 @@ def make_report(p, corr, bands, coverage, widths, out):
     low, high = diabetes.loc["Low (<0.2)"], diabetes.loc["High (>0.8)"]
     selected = corr.loc[corr.theme == "Overall SVI", ["measure", "n", "pearson", "spearman", "state_centered", "county_centered", "age_composition_partial"]]
     worst = coverage.sort_values("tract_coverage_pct").head(5).reset_index()
+    auth = p.get("source_authentication", {})
+    authenticated = auth.get("svi_official_bytes_equal") and auth.get("places_selected_records_equal")
+    minority_chd = corr.loc[(corr.theme == "Minority status") & (corr.measure == "CHD")].iloc[0]
+    source_note = (f"On {auth['observed_utc'][:10]}, the cached SVI file was **byte-for-byte identical** to CDC's official 2022 US tract CSV, authenticating its national rank scope. All **{auth['places_selected_records']:,} selected PLACES records** matched the current official **2025 release** in tract/measure identifiers, observation years, crude estimate type, point estimates and both interval endpoints. CDC's archived **2024 release** metadata specifies 2022 BRFSS for most measures and 2021 for high blood pressure; it does not describe these selected records. The filename is therefore misleading for the analyzed content. Original acquisition date and the other 34 cached PLACES measures remain unauthenticated. See `source_authentication.json` for exact endpoints, page hashes and comparison fields."
+                   if authenticated else "Original source release/ranking identity is unauthenticated. The cached PLACES inventory and observation years are consistent with the currently documented 2025 release; filenames alone do not establish provenance.")
+    rank_note = ("National rank scope was authenticated by byte comparison to the official US CSV." if authenticated else "National ranking identity has not been authenticated against the original download.")
     text = f"""# Social vulnerability & modeled health: a validated rerun
 
-Generated {p['run_utc'][:10]} from the original local CDC cache. This is a cross-sectional tract analysis, not individual prediction or causal evidence.
+**Rough draft for review — {p['run_utc'][:10]}.** Generated from the original local CDC cache. This is a cross-sectional tract analysis, not individual prediction or causal evidence.
 
 ## The result that survives
 
@@ -229,15 +250,15 @@ The original join reproduces **{p['joined_tracts']:,} tracts**. Median modeled a
 
 ## What changed about the evidence
 
-- The cached PLACES file is named `places_2024.csv`, but contains {p['places_measures']} measures and selected outcomes dated **2023**. Its content agrees with the live **2025 release** documentation. Original acquisition date and release identity are unknown; filename is not provenance. The live metadata snapshot is a separate present-day observation.
+- {source_note}
 - SVI has {p['svi_rows']:,} tracts, with {p['valid_overall_svi_in_source']:,} valid overall ranks. {p['svi_only']:,} SVI tracts lack a selected PLACES record; {p['places_only']:,} selected PLACES tracts lack SVI. **Kentucky and Pennsylvania are entirely absent** for these six outcomes: 4,751 tracts and 17,492,143 people in cached SVI estimates. CDC's 2025 release notes report both states unavailable for 2023 BRFSS-based measures. The remaining 554 unmatched tracts require separate investigation. Each correlation reports its own complete-pair n.
-- Matched tracts account for {p['matched_population']:,} of {p['svi_population']:,} people in the cached SVI population estimates ({100*p['matched_population']/p['svi_population']:.2f}%). This is coverage of ACS all-age estimates, not the PLACES adult denominator or a validated national prevalence total.
+- Matched tracts account for {p['matched_population']:,} of {p['svi_population']:,} people in the cached SVI population estimates ({100*p['matched_population']/p['svi_population']:.2f}%). The full SVI total equals the Census Bureau's published 2018–2022 ACS US population total. This is coverage of ACS all-age estimates, not the PLACES adult denominator or a national disease-prevalence estimate.
 - Selected rows are uniquely keyed by tract and measure, crude prevalence only, all 2023. The former `first` pivot happened to reproduce these values, but would silently conceal duplicate years/types in another input. The new runner rejects those inputs.
 - SVI 2022 uses 2018–2022 ACS estimates. PLACES 2025 uses 2023 BRFSS for the six selected measures and 2020 Census population geography. ACS 2022 uses 2020 tract delineations subject to legal-area updates; Connecticut adopted planning-region county equivalents. Matched identifiers and SVI county prefixes are checked, but exact boundary identity remains unaudited. These are overlapping period estimates, not a simultaneous 2022 measurement or a longitudinal design.
 
 ## Does the association depend on the summary method?
 
-The national Pearson/Spearman results below use complete pairs. State and county columns correlate deviations from group means, removing between-group mean differences; they do not control for all confounders. Age sensitivity residualizes both quantities against an intercept and SVI ACS percentages aged 65+ and 17 or younger on a common complete-case sample. It is a coarse linear composition check, not CDC age-standardization. All estimates are descriptive and unweighted.
+The national Pearson/Spearman results below use complete pairs. State and county columns correlate deviations from group means, removing between-group mean differences; they are not averages of group-specific correlations, a spatial-dependence correction or control for all confounders. Age sensitivity residualizes both quantities against an intercept and SVI ACS all-age percentages aged 65+ and 17 or younger on a common complete-case sample. This also removes constituents of SVI's household theme and does not estimate an independent theme effect. It is a coarse linear composition check, not CDC age-standardization; CDC does not publish age-adjusted tract estimates. All estimates are descriptive and unweighted.
 
 {selected.to_html(index=False, float_format=lambda v: f'{v:.3f}')}
 
@@ -245,7 +266,7 @@ The national Pearson/Spearman results below use complete pairs. State and county
 
 ## Geography changes the question
 
-Strong within-state correlation does not mean high statewide disease burden, intervention effectiveness, or greater inequality. The right panel shows an unweighted median of tract estimates, alongside each state's correlation and sample size. State comparisons retain the cached US SVI rankings and are descriptive sensitivity checks; no state-specific SVI ranking was downloaded. National ranking identity has not been authenticated against the original download, so source authentication remains a publication prerequisite.
+Strong within-state correlation does not mean high statewide disease burden, intervention effectiveness, or greater inequality. The right panel shows an unweighted median of tract estimates, alongside each state's correlation and sample size. State comparisons retain the cached US SVI rankings and are descriptive sensitivity checks; no state-specific SVI ranking was downloaded. {rank_note}
 
 ![State correlations, samples and median diabetes prevalence](state_context.svg)
 
@@ -253,7 +274,7 @@ Lowest tract matching coverage (full table in `coverage_by_state.csv`):
 
 {worst[['STATE','svi_tracts','matched_tracts','tract_coverage_pct','population_coverage_pct']].to_html(index=False, float_format=lambda v: f'{v:.2f}')}
 
-CDC documents the Kentucky/Pennsylvania exclusion; the reason for each remaining unmatched tract is not inferred from the join. `unmatched_tracts.csv` records identifiers for follow-up. Missing coverage need not be random. The state figure includes 48 states and DC, not all 50 states.
+CDC documents the Kentucky/Pennsylvania exclusion. Of the other 554 unmatched SVI tracts, 456 have zero ACS estimated population and 98 have positive estimated population; together they account for 7,654 people. CDC applies a 2020 Census adult population threshold of at least 50 for PLACES. ACS all-age counts cannot establish whether a particular tract fails that threshold, so individual exclusion reasons remain unresolved. `unmatched_tracts.csv` records identifiers for follow-up. Missing coverage need not be random. The state figure includes 48 states and DC, not all 50 states.
 
 ## Uncertainty belongs in the deliverable
 
@@ -267,6 +288,8 @@ PLACES is produced by multilevel regression and poststratification using demogra
 
 Ordinary entries in a correlation matrix do **not** implicitly adjust for the other columns. The old minority-theme discussion incorrectly called them residual associations. Negative or small aggregate correlations cannot establish a protective mechanism, access barrier, dietary explanation, or Hispanic paradox. We retain the signs and flag the need for a separate, justified investigation. Literature concerning mortality, counties or individuals does not validate a tract prevalence effect size.
 
+The minority-theme/CHD correlation is {minority_chd.pearson:.3f} nationally, {minority_chd.county_centered:.3f} after county mean-centering, and {minority_chd.age_composition_partial:.3f} in the coarse age-composition sensitivity check (n={int(minority_chd.n):,}). Its sign changes under these descriptive checks. That is evidence that the unadjusted demographic pattern is sensitive to composition and geography, not evidence of a protective mechanism or an independently estimated racial effect.
+
 ## Sources and reproducibility
 
 - [CDC SVI downloads and national/state ranking guidance](https://svi.cdc.gov/dataDownloads/data-download.html)
@@ -274,11 +297,16 @@ Ordinary entries in a correlation matrix do **not** implicitly adjust for the ot
 - [CDC PLACES dataset](https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-Census-Tract-D/cwsq-ngmh): currently labeled 2025; accessed {p['run_utc'][:10]}.
 - [CDC PLACES methodology](https://www.cdc.gov/places/methodology/index.html): modeled estimates, input overlap, intervals and 2020 geography; accessed {p['run_utc'][:10]}.
 - [CDC PLACES release notes](https://www.cdc.gov/places/current-release-notes/index.html): omitted states and observation years; accessed {p['run_utc'][:10]}.
+- [CDC archived 2024 tract dataset](https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-Census-Tract-D/ai6z-tcin): release versus observation-year distinction; accessed {p['run_utc'][:10]}.
+- [Official SVI 2022 US tract CSV](https://svi.cdc.gov/Documents/Data/2022/csv/states/SVI_2022_US.csv): national ranking authentication; accessed {p['run_utc'][:10]}.
+- [CDC PLACES FAQs](https://www.cdc.gov/places/faqs/index.html): absence of age-adjusted tract estimates; accessed {p['run_utc'][:10]}.
+- [CDC PLACES coverage](https://www.cdc.gov/places/about/index.html): adult threshold and geography; accessed {p['run_utc'][:10]}.
 - [Census ACS 2022 geography](https://www.census.gov/programs-surveys/acs/geography-acs/geography-boundaries-by-year/2022.html): tract vintage and legal-area caveats; accessed {p['run_utc'][:10]}.
+- [Census ACS 2018–2022 population](https://data.census.gov/table/ACSDT5Y2022.B01003?q=B01003): independent national total check; accessed {p['run_utc'][:10]}.
 
 Run `uv run python scripts/analyze.py` with the two raw cached CSVs. `provenance.json` records input byte counts, SHA-256 fingerprints, software versions and exclusions. All generated tables and figures derive from that runner. It intentionally makes no automatic download from the rolling PLACES URL. Reconstructing the exact cache requires the recorded fingerprints; a fresh release must be reviewed rather than renamed to match.
 
-This first overhaul adopts Indigo Circuit's explicit grain and validation gates and its habit of showing uncertainty with estimates, plus Log Pose's separation of dated evidence and inference. It does not transfer a match-outcome Beta model to CDC prevalence surfaces. Next useful work: authenticate the archived release and investigate geographically patterned exclusions before considering broader outcomes or maps.
+This first overhaul adopts Indigo Circuit's explicit grain and validation gates and its habit of showing uncertainty with estimates, plus Log Pose's separation of dated evidence and inference. It does not transfer a match-outcome Beta model to CDC prevalence surfaces. Next useful work: investigate residual exclusions and exact boundary equivalence before considering broader outcomes or maps. Current-source authentication does not reconstruct the original acquisition event or validate unused outcomes.
 """
     (out / "report.md").write_text(text, encoding="utf-8")
     # A dependency-free, portable reading surface; HTML tables are already embedded.
@@ -304,6 +332,13 @@ This first overhaul adopts Indigo Circuit's explicit grain and validation gates 
             else:
                 parts.append(f"<p>{content}</p>")
     (out / "report.html").write_text('''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Social vulnerability & modeled health</title><style>body{margin:0;background:#f4f1ea;color:#193044;font:17px/1.65 system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:64px 28px}h1{font-size:clamp(32px,5vw,60px);line-height:1.1;max-width:950px}h2{margin-top:56px;border-top:1px solid #c5ccc9;padding-top:28px}a{color:#275675}table{display:block;overflow:auto;border-collapse:collapse;font-size:14px;background:#fff;width:100%}td,th{padding:10px 14px;border-bottom:1px solid #dce1df;text-align:right}th:first-child,td:first-child{text-align:left}figure{margin:32px 0;background:white;padding:16px}img{width:100%;height:auto}code{font-size:14px;overflow-wrap:anywhere}li{margin-bottom:12px}@media print{body{background:white}main{padding:0}h2{break-after:avoid}figure{break-inside:avoid}}</style><main>''' + "\n".join(parts) + "</main></html>", encoding="utf-8")
+    portable = (out / "report.html").read_text(encoding="utf-8").replace("img{width", "svg{width:100%;height:auto}img{width")
+    for name in ["correlations.svg", "diabetes_gradient.svg", "state_context.svg"]:
+        svg = (out / name).read_text(encoding="utf-8")
+        svg = svg[svg.index("<svg"):]
+        portable = re.sub(r'<img src="' + re.escape(name) + r'" alt="([^"]*)">',
+                          lambda match: '<div role="img" aria-label="' + match.group(1) + '">' + svg + '</div>', portable)
+    (out / "social-vulnerability-health-review.html").write_text(portable, encoding="utf-8")
 
 
 if __name__ == "__main__":

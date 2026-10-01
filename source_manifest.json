@@ -5,13 +5,13 @@
       "sha256": "58df3dca3d4194879ffbd4b5e753eae48676ef691da1fa669f5fc40c3f79bc6a",
       "bytes": 61102059,
       "source": "https://svi.cdc.gov/dataDownloads/data-download.html",
-      "release": "SVI 2022, US tract file; national ranking identity not authenticated against original download"
+      "release": "SVI 2022 US census tract file; byte-identical to official national-ranked download observed 2026-10-01"
     },
     "places_2024.csv": {
       "sha256": "ba55f70d38301e258b87eabf928819794384903d5534f189676f3d465afe63d6",
       "bytes": 867875962,
       "source": "https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-Census-Tract-D/cwsq-ngmh",
-      "release": "Filename misleading; 2023 selected years and inventory consistent with 2025 release. Cached release identity unverified."
+      "release": "All 472,890 selected records and intervals match CDC current 2025 dataset observed 2026-10-01; original acquisition date and other 34 measures remain unauthenticated"
     }
   },
   "reviewed_documentation_date": "2026-10-01",
