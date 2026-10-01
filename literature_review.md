@@ -1,3 +1,5 @@
+> **Historical, unverified research aid.** The 2026-10-01 [audit](reports/overhaul_audit.md) and [report](reports/generated/report.md) supersede its interpretation. A correlation matrix does not implicitly control for other variables. Mechanisms, prediction claims, effect-size comparisons across mortality/prevalence and geographic explanations below are not established by this analysis. Verify each paper before reusing a claim.
+
 # Literature Review — Phase 1 Context
 
 > Curated peer-reviewed sources to layer academic nuance onto the technical findings. Use these to inform the markdown interpretation cells in the notebook (the TODOs).

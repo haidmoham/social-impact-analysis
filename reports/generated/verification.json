@@ -1,0 +1,15 @@
+{
+  "checks": {
+    "original_join_identifiers_exact": true,
+    "original_selected_values_exact": true,
+    "all_30_original_pearson_correlations_reproduced": true,
+    "expected_output_table_dimensions": true,
+    "historical_diabetes_band_medians_reproduced": true,
+    "state_coverage_reconciles_join": true,
+    "html_chart_references_resolve": true,
+    "historical_notebook_cells_and_outputs_preserved_exactly": true,
+    "three_generated_charts_visually_inspected": true
+  },
+  "method": "One-off execution comparison to original local processed cache, not a new automated test suite",
+  "runtime": "Existing original project Python 3.12.13 environment"
+}

@@ -1,0 +1,19 @@
+{
+  "scope": "Original locally cached public CDC aggregates; original acquisition date unknown",
+  "files": {
+    "svi_2022.csv": {
+      "sha256": "58df3dca3d4194879ffbd4b5e753eae48676ef691da1fa669f5fc40c3f79bc6a",
+      "bytes": 61102059,
+      "source": "https://svi.cdc.gov/dataDownloads/data-download.html",
+      "release": "SVI 2022, US tract file; national ranking identity not authenticated against original download"
+    },
+    "places_2024.csv": {
+      "sha256": "ba55f70d38301e258b87eabf928819794384903d5534f189676f3d465afe63d6",
+      "bytes": 867875962,
+      "source": "https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-Census-Tract-D/cwsq-ngmh",
+      "release": "Filename misleading; 2023 selected years and inventory consistent with 2025 release. Cached release identity unverified."
+    }
+  },
+  "reviewed_documentation_date": "2026-10-01",
+  "policy": "Runner requires these fingerprints. A fresh download is a new snapshot; review provenance and analysis before deliberately updating this manifest."
+}

@@ -1,32 +1,42 @@
-# Social Vulnerability and Health Outcomes in America
+# Social Vulnerability & Modeled Health Outcomes
 
-An exploratory notebook joining CDC Social Vulnerability Index (SVI) and CDC PLACES estimates at census-tract level.
+A reproducible, observational analysis of CDC SVI and six CDC PLACES measures at census-tract grain. This first overhaul turns the historical notebook into an audited offline pipeline and a reviewable analytical report.
 
-## Implemented analysis
+**Read the [report](reports/generated/report.md)** or open [the portable HTML report](reports/generated/report.html) locally. Figures, samples, coverage, sensitivity calculations and input fingerprints are checked in alongside it.
 
-[`notebooks/01_phase1_foundation.ipynb`](notebooks/01_phase1_foundation.ipynb) downloads and caches the source data, joins tract FIPS identifiers, and records:
+The original 78,815-tract join and diabetes tract medians (9.5% below SVI 0.2; 15.6% above 0.8) reproduce. Coverage is **48 states and DC**: Kentucky and Pennsylvania are absent for the six selected 2023 outcomes. This is a contrast between modeled tract estimates, not individual relative risk, national population prevalence, or a causal effect.
 
-- overall SVI and four theme rankings against six selected health measures;
-- a correlation heatmap and diabetes scatterplot with a rolling median;
-- sorted within-state SVI/diabetes correlations.
+## Reproduce the reviewed snapshot
 
-The saved join output contains **78,815 tracts**. Some historical notebook prose and figure captions still say roughly 73,000; those captions are inconsistent with the saved output. Pairwise missingness can make individual correlation sample sizes smaller than the joined table.
+Use Python 3.12 and the existing uv environment:
 
-Geographic maps, residual models, clustering, and feature-importance experiments are not implemented in the current notebook. State-level interpretation remains deferred. TIGER/Line boundaries are not an input to the implemented calculations.
-
-## Reproduce
-
-Use Python 3.12 and uv:
-
-```bash
-git clone https://github.com/haidmoham/social-impact-analysis.git
-cd social-impact-analysis
-uv sync
-uv run jupyter lab notebooks/01_phase1_foundation.ipynb
+```powershell
+uv sync --locked
+uv run python scripts/analyze.py
 ```
 
-Run the notebook from the repository root or `notebooks/`. It creates ignored `data/raw/`, `data/processed/`, and `outputs/figures/` directories. Reproduction requires the external CDC downloads; the saved outputs are historical results, not a newly validated dataset snapshot.
+Place the original public aggregate caches in `data/raw/svi_2022.csv` and `data/raw/places_2024.csv`. Raw and processed files remain gitignored. The misleading PLACES filename is preserved to identify the original cache: selected observations are from 2023, consistent with the currently documented 2025 release. Original download date and release identity remain unverified.
 
-## Limits
+[source_manifest.json](source_manifest.json) pins SHA-256 hashes and source URLs. A rolling CDC download may differ; the runner refuses changed fingerprints rather than silently recomputing under the old label. The exact cache is not distributed here, so a fresh clone cannot reproduce numbers without matching files. Review and deliberately update the manifest for a new snapshot. No paid service, credential or network access is required by the analysis itself.
 
-These are observational, area-level associations, not causal effects or individual predictions. Source estimates, missingness, joins, and geographic aggregation affect interpretation. The notebook’s discussion and [`literature_review.md`](literature_review.md) contain proposed explanations that the correlations alone cannot establish. Reconcile source versions, sample counts, and captions before extending or publishing the analysis.
+For another cache/output location:
+
+```powershell
+uv run python scripts/analyze.py --raw-dir C:\path\to\raw --output-dir C:\path\to\report
+```
+
+The runner validates FIPS, grain, years, estimate type, sentinels, ranges and interval ordering. It produces:
+
+- Coverage by state and unmatched identifiers; pairwise n for every association.
+- Pearson/Spearman correlations, state/county centering, and a coarse age-composition partial correlation.
+- Unweighted vulnerability-band medians and interquartile ranges; state association strength beside tract medians and samples.
+- CDC interval-width summaries and retained endpoints in `data/processed/selected_places_with_intervals.csv`.
+- Three SVG charts, an HTML/Markdown report, CSV evidence and software/input provenance in `reports/generated/`.
+
+## Interpretation and scope
+
+PLACES is modeled adult prevalence using demographic and geographic predictors that overlap SVI inputs. The estimates are not direct tract disease counts or independent validation of SVI. Geographic dependence and unavailable joint draws limit aggregate uncertainty; no causal interpretation, individual prediction, independence-based p-values or invented confidence bands are provided.
+
+The [historical notebook](notebooks/01_phase1_foundation.ipynb) retains saved outputs and an archival warning. Findings are reconciled in [the audit](reports/overhaul_audit.md). The [literature review](literature_review.md) is an unverified historical research aid, not a source of approved claims.
+
+This bounded upgrade borrows validation and uncertainty display from Indigo Circuit and dated evidence/inference separation from Log Pose. It adds no warehouse, service, predictive model, map infrastructure or portfolio restructuring. Authenticate archived release/ranking provenance and investigate residual unmatched tracts before publication or extension.

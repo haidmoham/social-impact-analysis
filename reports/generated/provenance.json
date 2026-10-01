@@ -1,0 +1,34 @@
+{
+  "run_utc": "2026-10-01T15:03:00.771123+00:00",
+  "python": "3.12.13",
+  "pandas": "3.0.2",
+  "numpy": "2.4.4",
+  "matplotlib": "3.10.9",
+  "input_files": [
+    {
+      "filename": "svi_2022.csv",
+      "bytes": 61102059,
+      "sha256": "58df3dca3d4194879ffbd4b5e753eae48676ef691da1fa669f5fc40c3f79bc6a",
+      "acquisition": "Copied from original local public CDC cache; original download date unknown"
+    },
+    {
+      "filename": "places_2024.csv",
+      "bytes": 867875962,
+      "sha256": "ba55f70d38301e258b87eabf928819794384903d5534f189676f3d465afe63d6",
+      "acquisition": "Copied from original local public CDC cache; original download date unknown"
+    }
+  ],
+  "svi_rows": 84120,
+  "places_rows": 3047284,
+  "places_measures": 40,
+  "selected_places_year": 2023,
+  "selected_type": "CrdPrv",
+  "joined_tracts": 78815,
+  "svi_only": 5305,
+  "places_only": 0,
+  "valid_overall_svi_in_source": 83342,
+  "matched_population": 313597796,
+  "svi_population": 331097593,
+  "release_identity": "Cached filename says 2024; 40-measure inventory and 2023 BRFSS years match live 2025 release documentation. Original download release not independently authenticated.",
+  "geography": "ACS 2022 and PLACES 2024+ documentation use 2020 census tract definitions (subject to legal-area updates); matching IDs checked, not a geometry crosswalk audit"
+}
